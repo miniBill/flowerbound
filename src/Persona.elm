@@ -59,7 +59,7 @@ levelBonus persona =
 
         fromAbilityScores : Int
         fromAbilityScores =
-            highestSum // 20
+            highestSum // 10
 
         fromFeatures : Int
         fromFeatures =
