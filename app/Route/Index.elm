@@ -576,7 +576,7 @@ playerUpdate msg ({ persona } as player) =
 
         RollValiantModifier ->
             ( Just player, Effect.rollCheck persona.moxie RolledValiantModifier )
-
+            
         RolledValiantModifier modifier ->
             ( { player | valiantModifier = modifier } |> Just
             , Effect.none
@@ -1297,8 +1297,9 @@ viewTurn player =
     , viewStatusChecks player
     , viewOrgasmButtons player
     , viewOrgasm player
-    , viewStimulationResolve player
     , viewTemperaments player
+    , viewStimulationResolve player
+    , viewArdorCheck player
     , viewMoves player
     , viewStimulationTable player
     ]
@@ -1425,7 +1426,7 @@ viewOrgasm player =
         modifiers : Int
         modifiers =
             if player.selectedTemperament == Just Valiant then
-                if player.valiantModifier > meters.stamina then
+                if player.valiantModifier > meters.intensity then
                     meters.stamina
 
                 else
@@ -1496,7 +1497,7 @@ viewOrgasm player =
         ]
     , if player.selectedTemperament == Just Valiant then
         Theme.row []
-            [ if player.valiantModifier > meters.stamina then
+            [ if player.valiantModifier > meters.intensity then
                 paragraph []
                     [ text "You are being "
                     , el [ Font.bold ] (text "Valiant")
@@ -1840,6 +1841,46 @@ viewStatusChecks player =
         )
     ]
 
+viewArdorCheck : PlayerModel -> List (Element PlayerMsg)
+viewArdorCheck player =
+    let
+        viewButtonAndResult : msg -> msg -> Phosphor.IconVariant -> String -> Maybe Int -> List (Element msg)
+        viewButtonAndResult rollMsg deleteMsg icon label result =
+            [ Theme.iconAndTextButton []
+                { icon = icon
+                , onPress = Just rollMsg
+                , label = label
+                }
+            , Theme.row [] (viewResult deleteMsg result)
+            ]
+
+        viewResult : msg -> Maybe Int -> List (Element msg)
+        viewResult deleteMsg result =
+            case result of
+                Nothing ->
+                    []
+
+                Just value ->
+                    [ el [ Font.bold, centerY, alignRight ] (text (String.fromInt value))
+                    , Theme.iconButton []
+                        { icon = Icons.delete
+                        , onPress = Just deleteMsg
+                        , title = "Delete"
+                        }
+                    ]
+    in
+    [ el [ Font.bold ] (text "Status checks")
+    , Layout.rowWithConstraints
+        [ Layout.byContent
+        ]
+        [ Theme.spacing ]
+         ([ viewButtonAndResult RollArdorCheck DeleteArdorCheck Icons.roll "Ardor" player.ardorCheck
+         ]
+            |> List.Extra.transpose
+            |> List.concat
+        )
+    ]
+
 
 viewOrgasmButtons : PlayerModel -> List (Element PlayerMsg)
 viewOrgasmButtons model =
@@ -1911,7 +1952,7 @@ viewTemperaments model =
     , [ ( Innocent, "You are living in the moment and not worrying about the past or future. You feel safe, happy, and unquestioning.", "Upon declaration, roll a **Moxie Check**. While the result remains greater than your **Craving** value, you may transfer points from your **Sensitivity** to your **Craving**." )
       , ( Thoughtful, "You are dwelling on the emotions and emotional implications and the shape of your future.", "Upon declaration, roll a **Moxie Check**. While the result remains greater than your **Craving** value, you may transfer points from your **Satiation** to your **Craving**." )
       , ( Perverse, "You are excited on a conceptual, kinky level, captivated and compelled.", "Upon declaration, roll a **Moxie Check**. While the result remains greater than your **Arousal** value, you may transfer points from your **Craving** to your **Arousal**." )
-      , ( Valiant, "You are proud of yourself for enduring, but you are enduring rather than enjoying.", "Upon declaration, roll a **Moxie Check**. While the result is greater than your **Stamina** value, add your **Stamina** value to your **Orgasm Threshold** as a Modifier." )
+      , ( Valiant, "You are proud of yourself for enduring, but you are enduring rather than enjoying.", "Upon declaration, roll a **Moxie Check**. While the result is greater than your **Intensity Points**, add your **Stamina** value to your **Orgasm Threshold** as a Modifier." )
       ]
         |> List.map (viewTemperament model)
         |> Theme.row [ Ui.wrap ]
