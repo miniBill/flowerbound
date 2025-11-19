@@ -576,7 +576,7 @@ playerUpdate msg ({ persona } as player) =
 
         RollValiantModifier ->
             ( Just player, Effect.rollCheck persona.moxie RolledValiantModifier )
-            
+
         RolledValiantModifier modifier ->
             ( { player | valiantModifier = modifier } |> Just
             , Effect.none
@@ -1841,6 +1841,7 @@ viewStatusChecks player =
         )
     ]
 
+
 viewArdorCheck : PlayerModel -> List (Element PlayerMsg)
 viewArdorCheck player =
     let
@@ -1874,7 +1875,7 @@ viewArdorCheck player =
         [ Layout.byContent
         ]
         [ Theme.spacing ]
-         ([ viewButtonAndResult RollArdorCheck DeleteArdorCheck Icons.roll "Ardor" player.ardorCheck
+        ([ viewButtonAndResult RollArdorCheck DeleteArdorCheck Icons.roll "Ardor" player.ardorCheck
          ]
             |> List.Extra.transpose
             |> List.concat
