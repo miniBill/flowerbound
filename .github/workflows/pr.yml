@@ -53,7 +53,11 @@ jobs:
               run: yarn bin >> $GITHUB_PATH
 
             - uses: sparksp/elm-format-action@v1
-
+              with:
+                  elm_files: |
+                      src/
+                      app/
+                      tests/
             - name: Elm-review check
               run: yarn elm-review --compiler node_modules/.bin/lamdera
     Test:
