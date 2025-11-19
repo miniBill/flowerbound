@@ -1794,10 +1794,10 @@ viewStimulationResolve player =
 viewStatusChecks : PlayerModel -> List (Element PlayerMsg)
 viewStatusChecks player =
     let
-        viewButtonAndResult : msg -> msg -> Phosphor.IconVariant -> String -> Maybe Int -> List (Element msg)
-        viewButtonAndResult rollMsg deleteMsg icon label result =
+        viewButtonAndResult : msg -> msg -> String -> Maybe Int -> List (Element msg)
+        viewButtonAndResult rollMsg deleteMsg label result =
             [ Theme.iconAndTextButton []
-                { icon = icon
+                { icon = Icons.roll
                 , onPress = Just rollMsg
                 , label = label
                 }
@@ -1829,12 +1829,12 @@ viewStatusChecks player =
         , Layout.byContent
         ]
         [ Theme.spacing ]
-        ([ viewButtonAndResult RollFitnessCheck DeleteFitnessCheck Icons.roll "Fitness" player.fitnessCheck
-         , viewButtonAndResult RollGraceCheck DeleteGraceCheck Icons.roll "Grace" player.graceCheck
-         , viewButtonAndResult RollArdorCheck DeleteArdorCheck Icons.roll "Ardor" player.ardorCheck
-         , viewButtonAndResult RollSanityCheck DeleteSanityCheck Icons.roll "Sanity" player.sanityCheck
-         , viewButtonAndResult RollProwessCheck DeleteProwessCheck Icons.roll "Prowess" player.prowessCheck
-         , viewButtonAndResult RollMoxieCheck DeleteMoxieCheck Icons.roll "Moxie" player.moxieCheck
+        ([ viewButtonAndResult RollFitnessCheck DeleteFitnessCheck "Fitness" player.fitnessCheck
+         , viewButtonAndResult RollGraceCheck DeleteGraceCheck "Grace" player.graceCheck
+         , viewButtonAndResult RollArdorCheck DeleteArdorCheck "Ardor" player.ardorCheck
+         , viewButtonAndResult RollSanityCheck DeleteSanityCheck "Sanity" player.sanityCheck
+         , viewButtonAndResult RollProwessCheck DeleteProwessCheck "Prowess" player.prowessCheck
+         , viewButtonAndResult RollMoxieCheck DeleteMoxieCheck "Moxie" player.moxieCheck
          ]
             |> List.Extra.transpose
             |> List.concat
@@ -1845,10 +1845,10 @@ viewStatusChecks player =
 viewArdorCheck : PlayerModel -> List (Element PlayerMsg)
 viewArdorCheck player =
     let
-        viewButtonAndResult : msg -> msg -> Phosphor.IconVariant -> String -> Maybe Int -> List (Element msg)
-        viewButtonAndResult rollMsg deleteMsg icon label result =
+        viewButtonAndResult : msg -> msg -> String -> Maybe Int -> List (Element msg)
+        viewButtonAndResult rollMsg deleteMsg label result =
             [ Theme.iconAndTextButton []
-                { icon = icon
+                { icon = Icons.roll
                 , onPress = Just rollMsg
                 , label = label
                 }
@@ -1875,7 +1875,7 @@ viewArdorCheck player =
         [ Layout.byContent
         ]
         [ Theme.spacing ]
-        ([ viewButtonAndResult RollArdorCheck DeleteArdorCheck Icons.roll "Ardor" player.ardorCheck
+        ([ viewButtonAndResult RollArdorCheck DeleteArdorCheck "Ardor" player.ardorCheck
          ]
             |> List.Extra.transpose
             |> List.concat
