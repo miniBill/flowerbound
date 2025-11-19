@@ -23,6 +23,7 @@ import Point2d exposing (Point2d)
 import Quantity exposing (Quantity)
 import Route
 import RouteBuilder exposing (StatefulRoute)
+import SeqDict exposing (SeqDict)
 import Set exposing (Set)
 import Shared
 import Site
@@ -70,24 +71,9 @@ type PlayerMsg
     | RestedCraving Int
     | RollValiantModifier
     | RolledValiantModifier Int
-    | RollFitnessCheck
-    | RolledFitnessCheck Int
-    | DeleteFitnessCheck
-    | RollGraceCheck
-    | RolledGraceCheck Int
-    | DeleteGraceCheck
-    | RollArdorCheck
-    | RolledArdorCheck Int
-    | DeleteArdorCheck
-    | RollSanityCheck
-    | RolledSanityCheck Int
-    | DeleteSanityCheck
-    | RollProwessCheck
-    | RolledProwessCheck Int
-    | DeleteProwessCheck
-    | RollMoxieCheck
-    | RolledMoxieCheck Int
-    | DeleteMoxieCheck
+    | RollCheck Check
+    | RolledCheck Check Int
+    | DeleteCheck Check
     | UpdateMeters Meters
     | StimulationCost Int
     | SelectMove (Maybe String)
@@ -126,15 +112,30 @@ type alias PlayerModel =
     , selectedTemperament : Maybe Temperament
     , selectedOrgasm : Maybe Orgasm
     , valiantModifier : Int
-    , fitnessCheck : Maybe Int
-    , graceCheck : Maybe Int
-    , ardorCheck : Maybe Int
-    , sanityCheck : Maybe Int
-    , prowessCheck : Maybe Int
-    , moxieCheck : Maybe Int
+    , checks : SeqDict Check Int
     , stimulationRoll : Maybe (List ( Int, Int ))
     , persona : Persona
     }
+
+
+type Check
+    = Fitness
+    | Grace
+    | Ardor
+    | Sanity
+    | Prowess
+    | Moxie
+
+
+allChecks : List Check
+allChecks =
+    [ Fitness
+    , Grace
+    , Ardor
+    , Sanity
+    , Prowess
+    , Moxie
+    ]
 
 
 type Temperament
@@ -582,81 +583,16 @@ playerUpdate msg ({ persona } as player) =
             , Effect.none
             )
 
-        RollFitnessCheck ->
-            ( Just player, Effect.rollCheck persona.fitness RolledFitnessCheck )
+        RollCheck check ->
+            ( Just player, Effect.rollCheck (checkBonus check persona) (RolledCheck check) )
 
-        RolledFitnessCheck modifier ->
-            ( { player | fitnessCheck = Just modifier } |> Just
+        RolledCheck check modifier ->
+            ( { player | checks = SeqDict.insert check modifier player.checks } |> Just
             , Effect.none
             )
 
-        DeleteFitnessCheck ->
-            ( { player | fitnessCheck = Nothing } |> Just
-            , Effect.none
-            )
-
-        RollGraceCheck ->
-            ( Just player, Effect.rollCheck persona.grace RolledGraceCheck )
-
-        RolledGraceCheck modifier ->
-            ( { player | graceCheck = Just modifier } |> Just
-            , Effect.none
-            )
-
-        DeleteGraceCheck ->
-            ( { player | graceCheck = Nothing } |> Just
-            , Effect.none
-            )
-
-        RollArdorCheck ->
-            ( Just player, Effect.rollCheck persona.ardor RolledArdorCheck )
-
-        RolledArdorCheck modifier ->
-            ( { player | ardorCheck = Just modifier } |> Just
-            , Effect.none
-            )
-
-        DeleteArdorCheck ->
-            ( { player | ardorCheck = Nothing } |> Just
-            , Effect.none
-            )
-
-        RollSanityCheck ->
-            ( Just player, Effect.rollCheck persona.sanity RolledSanityCheck )
-
-        RolledSanityCheck modifier ->
-            ( { player | sanityCheck = Just modifier } |> Just
-            , Effect.none
-            )
-
-        DeleteSanityCheck ->
-            ( { player | sanityCheck = Nothing } |> Just
-            , Effect.none
-            )
-
-        RollProwessCheck ->
-            ( Just player, Effect.rollCheck persona.prowess RolledProwessCheck )
-
-        RolledProwessCheck modifier ->
-            ( { player | prowessCheck = Just modifier } |> Just
-            , Effect.none
-            )
-
-        DeleteProwessCheck ->
-            ( { player | prowessCheck = Nothing } |> Just
-            , Effect.none
-            )
-
-        RollMoxieCheck ->
-            ( Just player, Effect.rollCheck persona.moxie RolledMoxieCheck )
-
-        RolledMoxieCheck modifier ->
-            ( { player | moxieCheck = Just modifier } |> Just
-            , Effect.none
-            )
-
-        DeleteMoxieCheck ->
-            ( { player | moxieCheck = Nothing } |> Just
+        DeleteCheck check ->
+            ( { player | checks = SeqDict.remove check player.checks } |> Just
             , Effect.none
             )
 
@@ -712,6 +648,28 @@ playerUpdate msg ({ persona } as player) =
 
         Notes notes ->
             ( Just { player | notes = notes }, Effect.none )
+
+
+checkBonus : Check -> Persona -> Int
+checkBonus check persona =
+    case check of
+        Fitness ->
+            persona.fitness
+
+        Grace ->
+            persona.grace
+
+        Ardor ->
+            persona.ardor
+
+        Sanity ->
+            persona.sanity
+
+        Prowess ->
+            persona.prowess
+
+        Moxie ->
+            persona.moxie
 
 
 addPlayer : PlayingModel -> Persona -> ( Maybe PlayingModel, Effect PlayingMsg )
@@ -1107,12 +1065,7 @@ initPlayerModel persona =
     , selectedTemperament = Nothing
     , selectedOrgasm = Nothing
     , valiantModifier = 0
-    , fitnessCheck = Nothing
-    , graceCheck = Nothing
-    , ardorCheck = Nothing
-    , sanityCheck = Nothing
-    , prowessCheck = Nothing
-    , moxieCheck = Nothing
+    , checks = SeqDict.empty
     , stimulationRoll = Nothing
     , persona = persona
     }
@@ -1294,12 +1247,12 @@ viewTurn : PlayerModel -> List (Element PlayerMsg)
 viewTurn player =
     [ viewMeters player
     , viewNotes player
-    , viewStatusChecks player
+    , viewStatusChecks allChecks player
     , viewOrgasmButtons player
     , viewOrgasm player
     , viewTemperaments player
     , viewStimulationResolve player
-    , viewArdorCheck player
+    , viewStatusChecks [ Ardor ] player
     , viewMoves player
     , viewStimulationTable player
     ]
@@ -1648,7 +1601,7 @@ viewStimulationResolve player =
         [ let
             content : String
             content =
-                case player.ardorCheck of
+                case SeqDict.get Ardor player.checks of
                     Just ardorCheckFlat ->
                         let
                             intensityAmount : Int
@@ -1763,7 +1716,7 @@ viewStimulationResolve player =
         [ let
             content : String
             content =
-                case player.ardorCheck of
+                case SeqDict.get Ardor player.checks of
                     Just ardorCheckFlat ->
                         let
                             intensityAmount : Int
@@ -1791,17 +1744,17 @@ viewStimulationResolve player =
     ]
 
 
-viewStatusChecks : PlayerModel -> List (Element PlayerMsg)
-viewStatusChecks player =
+viewStatusChecks : List Check -> PlayerModel -> List (Element PlayerMsg)
+viewStatusChecks checks player =
     let
-        viewButtonAndResult : msg -> msg -> String -> Maybe Int -> List (Element msg)
-        viewButtonAndResult rollMsg deleteMsg label result =
+        viewButtonAndResult : Check -> List (Element PlayerMsg)
+        viewButtonAndResult check =
             [ Theme.iconAndTextButton []
                 { icon = Icons.roll
-                , onPress = Just rollMsg
-                , label = label
+                , onPress = Just (RollCheck check)
+                , label = checkToString check
                 }
-            , Theme.row [] (viewResult deleteMsg result)
+            , Theme.row [] (viewResult (DeleteCheck check) (SeqDict.get check player.checks))
             ]
 
         viewResult : msg -> Maybe Int -> List (Element msg)
@@ -1829,58 +1782,34 @@ viewStatusChecks player =
         , Layout.byContent
         ]
         [ Theme.spacing ]
-        ([ viewButtonAndResult RollFitnessCheck DeleteFitnessCheck "Fitness" player.fitnessCheck
-         , viewButtonAndResult RollGraceCheck DeleteGraceCheck "Grace" player.graceCheck
-         , viewButtonAndResult RollArdorCheck DeleteArdorCheck "Ardor" player.ardorCheck
-         , viewButtonAndResult RollSanityCheck DeleteSanityCheck "Sanity" player.sanityCheck
-         , viewButtonAndResult RollProwessCheck DeleteProwessCheck "Prowess" player.prowessCheck
-         , viewButtonAndResult RollMoxieCheck DeleteMoxieCheck "Moxie" player.moxieCheck
-         ]
+        (checks
+            |> List.map viewButtonAndResult
             |> List.Extra.transpose
             |> List.concat
         )
     ]
 
 
-viewArdorCheck : PlayerModel -> List (Element PlayerMsg)
-viewArdorCheck player =
-    let
-        viewButtonAndResult : msg -> msg -> String -> Maybe Int -> List (Element msg)
-        viewButtonAndResult rollMsg deleteMsg label result =
-            [ Theme.iconAndTextButton []
-                { icon = Icons.roll
-                , onPress = Just rollMsg
-                , label = label
-                }
-            , Theme.row [] (viewResult deleteMsg result)
-            ]
+checkToString : Check -> String
+checkToString check =
+    case check of
+        Fitness ->
+            "Fitness"
 
-        viewResult : msg -> Maybe Int -> List (Element msg)
-        viewResult deleteMsg result =
-            case result of
-                Nothing ->
-                    []
+        Grace ->
+            "Grace"
 
-                Just value ->
-                    [ el [ Font.bold, centerY, alignRight ] (text (String.fromInt value))
-                    , Theme.iconButton []
-                        { icon = Icons.delete
-                        , onPress = Just deleteMsg
-                        , title = "Delete"
-                        }
-                    ]
-    in
-    [ el [ Font.bold ] (text "Status checks")
-    , Layout.rowWithConstraints
-        [ Layout.byContent
-        ]
-        [ Theme.spacing ]
-        ([ viewButtonAndResult RollArdorCheck DeleteArdorCheck "Ardor" player.ardorCheck
-         ]
-            |> List.Extra.transpose
-            |> List.concat
-        )
-    ]
+        Ardor ->
+            "Ardor"
+
+        Sanity ->
+            "Sanity"
+
+        Prowess ->
+            "Prowess"
+
+        Moxie ->
+            "Moxie"
 
 
 viewOrgasmButtons : PlayerModel -> List (Element PlayerMsg)
