@@ -1297,8 +1297,9 @@ viewTurn player =
     , viewStatusChecks player
     , viewOrgasmButtons player
     , viewOrgasm player
-    , viewStimulationResolve player
     , viewTemperaments player
+    , viewStimulationResolve player
+    , viewArdorCheck player
     , viewMoves player
     , viewStimulationTable player
     ]
@@ -1425,7 +1426,7 @@ viewOrgasm player =
         modifiers : Int
         modifiers =
             if player.selectedTemperament == Just Valiant then
-                if player.valiantModifier > meters.stamina then
+                if player.valiantModifier > meters.intensity then
                     meters.stamina
 
                 else
@@ -1496,7 +1497,7 @@ viewOrgasm player =
         ]
     , if player.selectedTemperament == Just Valiant then
         Theme.row []
-            [ if player.valiantModifier > meters.stamina then
+            [ if player.valiantModifier > meters.intensity then
                 paragraph []
                     [ text "You are being "
                     , el [ Font.bold ] (text "Valiant")
@@ -1793,10 +1794,10 @@ viewStimulationResolve player =
 viewStatusChecks : PlayerModel -> List (Element PlayerMsg)
 viewStatusChecks player =
     let
-        viewButtonAndResult : msg -> msg -> Phosphor.IconVariant -> String -> Maybe Int -> List (Element msg)
-        viewButtonAndResult rollMsg deleteMsg icon label result =
+        viewButtonAndResult : msg -> msg -> String -> Maybe Int -> List (Element msg)
+        viewButtonAndResult rollMsg deleteMsg label result =
             [ Theme.iconAndTextButton []
-                { icon = icon
+                { icon = Icons.roll
                 , onPress = Just rollMsg
                 , label = label
                 }
@@ -1828,12 +1829,53 @@ viewStatusChecks player =
         , Layout.byContent
         ]
         [ Theme.spacing ]
-        ([ viewButtonAndResult RollFitnessCheck DeleteFitnessCheck Icons.roll "Fitness" player.fitnessCheck
-         , viewButtonAndResult RollGraceCheck DeleteGraceCheck Icons.roll "Grace" player.graceCheck
-         , viewButtonAndResult RollArdorCheck DeleteArdorCheck Icons.roll "Ardor" player.ardorCheck
-         , viewButtonAndResult RollSanityCheck DeleteSanityCheck Icons.roll "Sanity" player.sanityCheck
-         , viewButtonAndResult RollProwessCheck DeleteProwessCheck Icons.roll "Prowess" player.prowessCheck
-         , viewButtonAndResult RollMoxieCheck DeleteMoxieCheck Icons.roll "Moxie" player.moxieCheck
+        ([ viewButtonAndResult RollFitnessCheck DeleteFitnessCheck "Fitness" player.fitnessCheck
+         , viewButtonAndResult RollGraceCheck DeleteGraceCheck "Grace" player.graceCheck
+         , viewButtonAndResult RollArdorCheck DeleteArdorCheck "Ardor" player.ardorCheck
+         , viewButtonAndResult RollSanityCheck DeleteSanityCheck "Sanity" player.sanityCheck
+         , viewButtonAndResult RollProwessCheck DeleteProwessCheck "Prowess" player.prowessCheck
+         , viewButtonAndResult RollMoxieCheck DeleteMoxieCheck "Moxie" player.moxieCheck
+         ]
+            |> List.Extra.transpose
+            |> List.concat
+        )
+    ]
+
+
+viewArdorCheck : PlayerModel -> List (Element PlayerMsg)
+viewArdorCheck player =
+    let
+        viewButtonAndResult : msg -> msg -> String -> Maybe Int -> List (Element msg)
+        viewButtonAndResult rollMsg deleteMsg label result =
+            [ Theme.iconAndTextButton []
+                { icon = Icons.roll
+                , onPress = Just rollMsg
+                , label = label
+                }
+            , Theme.row [] (viewResult deleteMsg result)
+            ]
+
+        viewResult : msg -> Maybe Int -> List (Element msg)
+        viewResult deleteMsg result =
+            case result of
+                Nothing ->
+                    []
+
+                Just value ->
+                    [ el [ Font.bold, centerY, alignRight ] (text (String.fromInt value))
+                    , Theme.iconButton []
+                        { icon = Icons.delete
+                        , onPress = Just deleteMsg
+                        , title = "Delete"
+                        }
+                    ]
+    in
+    [ el [ Font.bold ] (text "Status checks")
+    , Layout.rowWithConstraints
+        [ Layout.byContent
+        ]
+        [ Theme.spacing ]
+        ([ viewButtonAndResult RollArdorCheck DeleteArdorCheck "Ardor" player.ardorCheck
          ]
             |> List.Extra.transpose
             |> List.concat
@@ -1911,7 +1953,7 @@ viewTemperaments model =
     , [ ( Innocent, "You are living in the moment and not worrying about the past or future. You feel safe, happy, and unquestioning.", "Upon declaration, roll a **Moxie Check**. While the result remains greater than your **Craving** value, you may transfer points from your **Sensitivity** to your **Craving**." )
       , ( Thoughtful, "You are dwelling on the emotions and emotional implications and the shape of your future.", "Upon declaration, roll a **Moxie Check**. While the result remains greater than your **Craving** value, you may transfer points from your **Satiation** to your **Craving**." )
       , ( Perverse, "You are excited on a conceptual, kinky level, captivated and compelled.", "Upon declaration, roll a **Moxie Check**. While the result remains greater than your **Arousal** value, you may transfer points from your **Craving** to your **Arousal**." )
-      , ( Valiant, "You are proud of yourself for enduring, but you are enduring rather than enjoying.", "Upon declaration, roll a **Moxie Check**. While the result is greater than your **Stamina** value, add your **Stamina** value to your **Orgasm Threshold** as a Modifier." )
+      , ( Valiant, "You are proud of yourself for enduring, but you are enduring rather than enjoying.", "Upon declaration, roll a **Moxie Check**. While the result is greater than your **Intensity Points**, add your **Stamina** value to your **Orgasm Threshold** as a Modifier." )
       ]
         |> List.map (viewTemperament model)
         |> Theme.row [ Ui.wrap ]
